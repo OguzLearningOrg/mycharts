@@ -16,69 +16,74 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: notification
+  name: portfolio
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        app: notification
+        app: portfolio
     spec:
       containers:
-      - name: notification
-        image: wwdemo/images:ibmdemo.notification.latest
+      - name: portfolio
+        image: wwdemo/images:ibmdemo.portfolio.latest
         env:
-          - name: MQ_ID
+          - name: JDBC_HOST
             valueFrom:
               secretKeyRef:
-                name: mq
-                key: id
-          - name: MQ_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: mq   
-                key: pwd
-          - name: MQ_HOST
-            valueFrom:
-              secretKeyRef:
-                name: mq
+                name: db2
                 key: host
-          - name: MQ_PORT
+          - name: JDBC_PORT
             valueFrom:
               secretKeyRef:
-                name: mq   
+                name: db2
                 key: port
-          - name: MQ_CHANNEL
+          - name: JDBC_DB
             valueFrom:
               secretKeyRef:
-                name: mq   
-                key: channel
-          - name: MQ_QUEUE_MANAGER
+                name: db2
+                key: db
+          - name: JDBC_ID
             valueFrom:
               secretKeyRef:
-                name: mq   
-                key: queue-manager
-          - name: MQ_QUEUE
-            valueFrom:
-              secretKeyRef:
-                name: mq   
-                key: queue
-          - name: OW_URL
-            valueFrom:
-              secretKeyRef:
-                name: openwhisk
-                key: url
-          - name: OW_ID
-            valueFrom:
-              secretKeyRef:
-                name: openwhisk
+                name: db2
                 key: id
-          - name: OW_PASSWORD
+          - name: JDBC_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: openwhisk   
+                name: db2
                 key: pwd
         ports:
           - containerPort: 9080
         imagePullPolicy: Always
 ---
+#Deploy the service
+apiVersion: v1
+kind: Service
+metadata:
+  name: portfolio-service
+  labels:
+    app: portfolio
+spec:
+  type: NodePort
+  ports:
+    - port: 9080
+      nodePort: 31001
+  selector:
+    app: portfolio
+---   
+#Configure the ingress 
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+# annotations:
+#   ingress.kubernetes.io/rewrite-target: /portfolio
+  name: portfolio-ingress
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /portfolio
+        backend:
+          serviceName: portfolio-service
+          servicePort: 9080
