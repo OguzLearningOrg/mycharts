@@ -3,5 +3,5 @@ kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-configmap3
 data:
-    myvalue: {{ .Values.myvalue }}
+  myvalue: {{ .Values.myvalue }}
 
